@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="wordcaps-token" content="__WORDCAPS_TOKEN__">
+  <title>WordCaps</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>WordCaps</h1>
+    <span id="resolve-pill" class="pill pill-off">Resolve: comprobando…</span>
+    <button id="refresh-status" class="ghost">Comprobar</button>
+  </header>
+
+  <main class="layout">
+    <section class="column">
+      <article class="card" id="card-connection">
+        <h2>1. Conexión con Resolve</h2>
+        <ol class="steps">
+          <li>Instala el script en Resolve (una vez). <button id="install-script">Instalar script</button></li>
+          <li>En Resolve abre <b>Workspace › Scripts › WordCaps</b> (una vez por sesión).</li>
+          <li>En Resolve Studio, deja <b>Preferences › General › External scripting</b> en <i>Local</i>.</li>
+        </ol>
+        <p id="connection-detail" class="muted"></p>
+      </article>
+
+      <article class="card">
+        <h2>2. Plantilla Text+</h2>
+        <div class="row">
+          <select id="template-select"><option value="">Sin plantillas</option></select>
+          <button id="refresh-templates" class="ghost">Actualizar</button>
+        </div>
+        <details>
+          <summary>¿No tienes plantilla?</summary>
+          <p>Pulsa el botón para insertar un Text+ en el timeline. Dale el estilo base que quieras (fuente, sombra…), arrástralo al <b>Media Pool</b> y renómbralo a <b>WordCaps Word</b>. Después pulsa Actualizar y bórralo del timeline.</p>
+          <button id="create-template">Insertar Text+ en el timeline</button>
+        </details>
+      </article>
+
+      <article class="card">
+        <h2>3. Texto</h2>
+        <div class="tabs">
+          <button class="tab active" data-tab="tab-transcribe">Transcribir audio</button>
+          <button class="tab" data-tab="tab-srt">Importar SRT</button>
+        </div>
+        <div id="tab-transcribe" class="tab-body">
+          <div class="grid2">
+            <label>Modelo <select id="model"></select></label>
+            <label>Idioma
+              <select id="language">
+                <option value="es">Español</option>
+                <option value="en">Inglés</option>
+                <option value="pt">Portugués</option>
+                <option value="fr">Francés</option>
+                <option value="it">Italiano</option>
+                <option value="de">Alemán</option>
+                <option value="auto">Detectar</option>
+              </select>
+            </label>
+          </div>
+          <button id="transcribe" class="primary">Transcribir el timeline</button>
+          <p class="muted">Renderiza el audio del timeline y lo transcribe en tu ordenador con whisper.cpp. La primera vez descarga el programa y el modelo.</p>
+        </div>
+        <div id="tab-srt" class="tab-body hidden">
+          <input type="file" id="srt-file" accept=".srt,.txt">
+          <p class="muted">Los tiempos del SRT se toman desde el inicio del timeline.</p>
+        </div>
+        <p id="word-count" class="muted"></p>
+        <div id="words" class="words"></div>
+      </article>
+    </section>
+
+    <section class="column">
+      <article class="card">
+        <h2>4. Maquetado y estilo</h2>
+        <form id="settings" class="settings">
+          <label>Modo
+            <select name="mode">
+              <option value="accumulate">Grupos (las palabras se acumulan)</option>
+              <option value="single">Una palabra cada vez</option>
+            </select>
+          </label>
+          <label>Palabras por grupo <input type="number" name="max_words" min="1" max="8"></label>
+          <label>Caracteres por línea <input type="number" name="max_chars_per_line" min="4" max="60"></label>
+          <label>Líneas máximas <input type="number" name="max_lines" min="1" max="4"></label>
+          <label>Pausa que corta grupo (s) <input type="number" name="pause_split" step="0.05" min="0"></label>
+          <label class="check"><input type="checkbox" name="split_on_punctuation"> Cortar en punto final</label>
+          <label class="check"><input type="checkbox" name="uppercase"> Mayúsculas</label>
+          <label class="check"><input type="checkbox" name="strip_punctuation"> Quitar puntuación</label>
+          <label>Fuente <input type="text" name="font"></label>
+          <label>Estilo de fuente <input type="text" name="font_style"></label>
+          <label>Tamaño <input type="number" name="size" step="0.005" min="0.01" max="0.5"></label>
+          <label>Altura de la zona (0 abajo, 1 arriba) <input type="number" name="zone_y" step="0.01" min="0" max="1"></label>
+          <label>Ancho de la zona <input type="number" name="zone_width" step="0.05" min="0.1" max="1"></label>
+          <label>Color <input type="color" name="color"></label>
+          <label>Color de resalte <input type="color" name="highlight_color"></label>
+          <label class="check"><input type="checkbox" name="highlight_active"> Resaltar la palabra que suena</label>
+          <label class="check"><input type="checkbox" name="outline"> Contorno</label>
+          <label>Color de contorno <input type="color" name="outline_color"></label>
+          <label>Grosor de contorno <input type="number" name="outline_thickness" step="0.01" min="0" max="0.5"></label>
+          <label>Palabras clave
+            <select name="emphasis">
+              <option value="longest">La más larga del grupo</option>
+              <option value="keywords">Solo mi lista</option>
+              <option value="none">Ninguna</option>
+            </select>
+          </label>
+          <label>Lista de palabras clave <input type="text" name="keywords" placeholder="dinero, gratis, ahora"></label>
+          <label>Escala de palabras clave <input type="number" name="emphasis_scale" step="0.05" min="1" max="3"></label>
+          <label>Animación <select name="animation" class="animation-select"></select></label>
+          <label>Animación de palabras clave <select name="emphasis_animation" class="animation-select"></select></label>
+          <label>Color de clip en el timeline
+            <select name="clip_color">
+              <option value="Orange">Naranja</option><option value="Yellow">Amarillo</option>
+              <option value="Lime">Lima</option><option value="Green">Verde</option>
+              <option value="Teal">Verde azulado</option><option value="Blue">Azul</option>
+              <option value="Purple">Morado</option><option value="Pink">Rosa</option>
+            </select>
+          </label>
+          <label>Ancho medio de letra (calibración) <input type="number" name="char_width" step="0.01" min="0.2" max="1.2"></label>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2>5. Vista previa</h2>
+        <canvas id="preview" width="360" height="640"></canvas>
+        <input type="range" id="scrub" min="0" max="0" step="0.01" value="0">
+        <p id="preview-info" class="muted">Sin palabras todavía.</p>
+      </article>
+
+      <article class="card actions">
+        <button id="place" class="primary">Generar en Resolve</button>
+        <button id="run-all">Ejecutar todo (transcribir + generar)</button>
+        <div id="job" class="job hidden">
+          <div class="bar"><div id="job-bar"></div></div>
+          <p id="job-stage"></p>
+        </div>
+        <p id="message" class="message"></p>
+      </article>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
